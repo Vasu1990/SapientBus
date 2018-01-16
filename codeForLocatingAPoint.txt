@@ -1,0 +1,22 @@
+function initMap(uluru) {
+      var map = new window.google.maps.Map(document.getElementById('map'), {
+        zoom: 18,
+        center: uluru
+      });
+      var marker = new window.google.maps.Marker({
+        position: uluru,
+        map: map
+      });
+    }
+    var googleMapsClient = require('@google/maps').createClient({
+      key: 'AIzaSyC-sOnn5oi9Bd84AsDx9vIq_B4VChHRgUA',
+      Promise: Promise
+    });
+    googleMapsClient.geocode({address: 'dcliff inn, sub chowk, gurga, indi'}).asPromise()
+  .then((response) => {
+    console.log(response.json.results);
+    initMap(response.json.results[0].geometry.location);
+  })
+  .catch((err) => {
+    console.log(err);
+  });
