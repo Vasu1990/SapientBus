@@ -14,6 +14,8 @@ class App extends Component {
     this.calculateAndDisplayRoute = this.calculateAndDisplayRoute.bind(this);
     this.showSteps = this.showSteps.bind(this);
     this.attachInstructionText = this.attachInstructionText.bind(this);
+    this.calTotalDistanceAndTime = this.calTotalDistanceAndTime.bind(this);
+    this.roundToTwoPlaces = this.roundToTwoPlaces.bind(this);
     this.search = this.search.bind(this);
   }
 
@@ -41,9 +43,38 @@ class App extends Component {
     this.calculateAndDisplayRoute(this.directionsDisplay, this.directionsService, this.markerArray, this.stepDisplay, this.map);
   }
 
+  calTotalDistanceAndTime = legs => {
+    let total = {
+      distance: 0,
+      time: 0
+    };
+    legs.forEach( (item,index) => {
+      total.distance += item.distance.value;
+      total.time += item.duration.value;
+    });
+    if (total.distance/1000 > 1) {
+      total.distance = this.roundToTwoPlaces(total.distance/1000) + " Km";
+    } else {
+      total.distance = this.roundToTwoPlaces(total.distance) + " m";
+    }
+    if (total.time/3600 > 1) {
+      total.time = this.roundToTwoPlaces(total.time/3600) + " hours";
+    } else {
+      total.time = this.roundToTwoPlaces(total.time/60) + " min";
+    }
+    return total;
+  }
+
+  roundToTwoPlaces = number => {
+      return parseFloat(parseFloat(Math.round(number * 100) / 100).toFixed(2));
+  };
+
   calculateAndDisplayRoute = (directionsDisplay, directionsService,
           markerArray, stepDisplay, map) => {
-        let self = this;
+        let self = this,
+            waypoint = [{
+              location: document.getElementById('wayPoints').value
+            }];
         // First, remove any existing markers from the map.
         for (var i = 0; i < markerArray.length; i++) {
           markerArray[i].setMap(null);
@@ -53,7 +84,8 @@ class App extends Component {
         directionsService.route({
           origin: document.getElementById('start').value,
           destination: document.getElementById('end').value,
-          travelMode: document.getElementById('travelMode').value || 'WALKING'
+          travelMode: document.getElementById('travelMode').value || 'WALKING',
+          waypoints: waypoint,
         }, function(response, status) {
           // Route the directions and pass the response to a function to create
           // markers for each step.
@@ -62,8 +94,9 @@ class App extends Component {
                 '<b>' + response.routes[0].warnings + '</b>';
             self.directionsDisplay.setDirections(response);
             self.showSteps(response, markerArray, stepDisplay, map);
-            document.getElementById('totalDistance').innerHTML = response.routes[0].legs[0].distance.text;
-            document.getElementById('totalTime').innerHTML = response.routes[0].legs[0].duration.text;
+            let total = self.calTotalDistanceAndTime(response.routes[0].legs);
+            document.getElementById('totalDistance').innerHTML = total.distance;
+            document.getElementById('totalTime').innerHTML = total.time;
           } else {
             window.alert('Directions request failed due to ' + status);
           }
@@ -110,7 +143,7 @@ class App extends Component {
         <div id="floating-panel">
     <b>Start: </b>
     <select id="start">
-      <option value="rajiv chowk,gurgaon,india">Rajiv chowk,Gurgaon</option>
+      <option value="JMD Garden, sector 33, gurgaon, india">Home</option>
       <option value="infospace, gurgaon, india">Infospace, Gurgaon</option>
       <option value="janakpuri, delhi, india">Janakpuri</option>
       <option value="green park, delhi, india">Green park</option>
@@ -119,16 +152,22 @@ class App extends Component {
     <b>End: </b>
     <select id="end">
       <option value="rajiv chowk,gurgaon,india">Rajiv chowk,Gurgaon</option>
-      <option value="infospace, gurgaon, india">Infospace, Gurgaon</option>
+      <option value="infospace, gurgaon, india">Office</option>
       <option value="janakpuri, delhi, india">Janakpuri</option>
       <option value="green park, delhi, india">Green park</option>
       <option value="sector 15, noida, india">Sector 15, Noida</option>>
     </select>
+    <b>Travel Mode: </b>
     <select id="travelMode">
         <option value="DRIVING">DRIVING</option>
         <option value="WALKING">WALKING</option>
         <option value="BICYCLING">BICYCLING</option>
         <option value="TRANSIT">TRANSIT</option>
+    </select>
+    <b>Via: </b>
+    <select id="wayPoints">
+        <option value="rajiv chowk, gurgaon, india">Rajiv chowk</option>
+        <option value="Huda City center, gurgaon , india">Huda city center</option>
     </select>
     <button id="btn" onClick={this.search}>Search</button>
     <div id="warnings-panel"></div>
